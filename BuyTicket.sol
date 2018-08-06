@@ -1,10 +1,9 @@
 contract Buyticket {
     uint public amount;
     address public owner;
-    uint public quantityBuy;
     uint public totalReward;
     uint8 public result;
-    
+    Ticket public winner;
     struct Ticket {
         address buyer;
         uint valueItem;
@@ -19,18 +18,19 @@ contract Buyticket {
         
     }
     
-    function BuyTicket() public payable {
+    // mapping(address => uint) public tickets;
+    function BuyOneTicket() public payable {
         require(amount > 0);
-        require(msg.value % 0.1 ether == 0);
+        require(msg.value == 0.1 ether);
+        for(uint8 z = 0 ; z < tickets.length ; z++)
+        require(tickets[z].buyer != msg.sender );
         totalReward += msg.value;     
-        for(uint8 i = 0 ; i < uint8(msg.value / 0.1 ether ) ; i++) {
         tickets.push(Ticket (msg.sender, random()));
         amount --;
-        }
         
     }
     
-    function GetResult() public {
+    function GetResult() private {
         result = random(); 
     }
     
@@ -39,12 +39,20 @@ contract Buyticket {
    }
    
    function sendRewardForWinner() public {
-       uint result = random();
+       require(msg.sender == owner);
+       require(winner.buyer == 0 );
+       GetResult();
        for(uint i = 0 ; i < tickets.length ; i++) {
            Ticket memory ticket = tickets[i];
            if(ticket.valueItem == result) {
                ticket.buyer.transfer(uint (totalReward));
+               winner = ticket;
            }
+       }
+       if(winner.buyer == 0)
+       {
+           winner.buyer = owner;
+           owner.transfer(amount);
        }
    }
 }
